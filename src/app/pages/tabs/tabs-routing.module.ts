@@ -28,6 +28,10 @@ const routes: Routes = [
 
     ]
   },
+  {
+    path: 'restaurants/:restaurantId',
+    loadChildren: () => import('./items/items.module').then( m => m.ItemsPageModule)
+  },
 ];
 
 @NgModule({

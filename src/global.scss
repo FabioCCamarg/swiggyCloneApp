@@ -58,5 +58,13 @@ h6 {
 }
 
 .boderBottom {
-  border-bottom: 1.5vh solic var(--ion-color-light);
+  border-bottom: 1.5vh solid var(--ion-color-light);
+}
+
+ion-header {
+  margin-top: 1.9rem;
+}
+
+.borderBottomSmall {
+  border-bottom: 0.1rem solid var(--ion-color-light);
 }
