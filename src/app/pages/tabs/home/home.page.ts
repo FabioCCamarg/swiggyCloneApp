@@ -25,7 +25,7 @@ export class HomePage implements OnInit {
 
       this.restaurants = [
         {
-          uid: '12effds',
+          uid: '12wefdss',
           cover: 'assets/imgs/1.jpg',
           name: 'Stayfit',
           short_name: 'stayfit',

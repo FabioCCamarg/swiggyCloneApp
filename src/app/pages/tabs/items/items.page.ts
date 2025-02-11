@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { NavController } from '@ionic/angular';
+import { Preferences } from '@capacitor/preferences';
 
 @Component({
   selector: 'app-items',
@@ -9,14 +10,15 @@ import { NavController } from '@ionic/angular';
   standalone: false,
 })
 export class ItemsPage implements OnInit {
-
   id: any;
   data: any = {};
+  cartData: any = {};
   items: any[] = [];
   veg: boolean = false;
+  storeData: any = {};
   restaurants = [
     {
-      uid: '12effds',
+      uid: '12wefdss',
       cover: 'assets/imgs/1.jpg',
       name: 'Stayfit',
       short_name: 'stayfit',
@@ -54,53 +56,53 @@ export class ItemsPage implements OnInit {
   ];
   categories: any[] = [
     {
-      id: "e00",
-      name: "Italian",
-      uid: "12wefdss"
+      id: 'e00',
+      name: 'Italian',
+      uid: '12wefdss',
     },
     {
-      id: "e0",
-      name: "Mexican",
-      uid: "12wefdss"
+      id: 'e0',
+      name: 'Mexican',
+      uid: '12wefdss',
     },
   ];
   allItems = [
     {
-      category_id: "e00",
-      cover: "assets/imgs/pizza.jpg",
-      desc: "Great int taste",
-      id: "i1",
-      name: "Pizza",
+      category_id: 'e00',
+      cover: 'assets/imgs/pizza.jpg',
+      desc: 'Great int taste',
+      id: 'i1',
+      name: 'Pizza',
       price: 120,
       rating: 0,
       status: true,
-      uid: "12wefdss",
+      uid: '12wefdss',
       variation: false,
       veg: false
     },
     {
-      category_id: "e00",
-      cover: "assets/imgs/salad.jpg",
-      desc: "Great int taste",
-      id: "i2",
-      name: "Caprese Salad",
+      category_id: 'e0',
+      cover: 'assets/imgs/salad.jpg',
+      desc: 'Great int taste',
+      id: 'i2',
+      name: 'Caprese Salad',
       price: 200,
       rating: 0,
       status: true,
-      uid: "12wefdss",
+      uid: '12wefdss',
       variation: false,
       veg: true
     },
     {
-      category_id: "e00",
-      cover: "assets/imgs/pasta.jpg",
-      desc: "Great int taste",
-      id: "i3",
-      name: "Pasta",
+      category_id: 'e00',
+      cover: 'assets/imgs/pasta.jpg',
+      desc: 'Great int taste',
+      id: 'i3',
+      name: 'Pasta',
       price: 150,
       rating: 0,
       status: true,
-      uid: "12wefdss",
+      uid: '12wefdss',
       variation: false,
       veg: false
     },
@@ -109,12 +111,13 @@ export class ItemsPage implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private navCtrl: NavController,
-  ) { }
+    private router: Router
+  ) {}
 
   ngOnInit() {
-    this.route.paramMap.subscribe(paramMap => {
+    this.route.paramMap.subscribe((paramMap) => {
       console.log('data: ', paramMap);
-      if(!paramMap.has('restaurantId')) {
+      if (!paramMap.has('restaurantId')) {
         this.navCtrl.back();
         return;
       }
@@ -124,20 +127,109 @@ export class ItemsPage implements OnInit {
     });
   }
 
-  getItems() {
-    this.data = {};
-    let data: any = this.restaurants.filter(x => x.uid === this.id);
-    this.data = data[0];
-    this.items = this.allItems;
-    console.log('restaurant: ', this.data);
+  getCart() {
+    return Preferences.get({key: 'cart'});
+  }
 
+  async getItems() {
+    this.data = {};
+    this.cartData = {};
+    this.storeData = {};
+    let data: any = this.restaurants.filter((x) => x.uid === this.id);
+    this.data = data[0];
+    this.categories = this.categories.filter((x) => x.uid === this.id);
+    this.items = this.allItems.filter((x) => x.uid === this.id);
+    console.log('restaurant: ', this.data);
+    let cart: any = await this.getCart();
+    console.log('cart: ', cart);
+    if(cart?.value) {
+      this.storeData = JSON.parse(cart.value);
+      console.log('storeData: ', this.storeData);
+      if(this.id == this.storeData.restaurant.uid && this.allItems.length > 0) {
+        this.allItems.forEach((element: any) => {
+          this.storeData.items.forEach(ele => {
+            if(element.id != ele.id) return;
+            element.quantity = ele.quantity;
+          });
+        });
+      }
+      this.cartData.totalItem = this.storeData.totalItem;
+      this.cartData.totalPrice = this.storeData.totalPrice;
+    }
   }
   getCuisine(cuisine) {
     return cuisine.join(', ');
   }
 
   vegOnly(event) {
-    console.log(event.detail.checked)
+    console.log(event.detail.checked);
+    this.items = [];
+    if(event.detail.checked == true) this.items =  this.allItems.filter(x => x.veg === true);
+    else this.items = this.allItems;
+    console.log('items: ', this.items);
+  }
+  quantityPlus(item, index) {
+    try {
+      console.log(this.items[index]);
+      if (!this.items[index].quantity || this.items[index].quantity == 0) {
+        this.items[index].quantity = 1;
+        this.calculate();
+      } else {
+        this.items[index].quantity += 1;
+        this.calculate();
+      }
+    } catch (e) {
+      console.log(e);
+    }
+  }
+  quantityMinus(item, index) {
+    if (this.items[index].quantity !== 0) {
+      this.items[index].quantity -= 1;
+    } else {
+      this.items[index].quantity = 0;
+    }
+    this.calculate();
   }
 
+  calculate() {
+    console.log(this.items);
+    this.cartData.items = [];
+    let item = this.items.filter((x) => x.quantity > 0);
+    console.log('added item: ', item);
+    this.cartData.items = item;
+    this.cartData.totalPrice = 0;
+    this.cartData.totalItem = 0;
+    item.forEach((element) => {
+      this.cartData.totalItem += element.quantity;
+      this.cartData.totalPrice +=
+        parseFloat(element.price) * parseFloat(element.quantity);
+    });
+    this.cartData.totalPrice = parseFloat(this.cartData.totalPrice).toFixed(2);
+    if (this.cartData.totemItem == 0) {
+      this.cartData.totalItem = 0;
+      this.cartData.totalPrice = 0;
+    }
+    console.log('cart: ', this.cartData);
+  }
+
+  async saveToCart() {
+    try {
+      this.cartData.restaurant = {};
+      this.cartData.restaurant = this.data;
+      console.log('CartData', this.cartData);
+      //Utilizando Plugin Capacitor
+      await Preferences.set({
+        key: 'cart',
+        value: JSON.stringify(this.cartData)
+      });
+    } catch(e) {
+      console.log(e);
+    }
+  }
+
+  async viewCart() {
+    if (this.cartData.items && this.cartData.items.length > 0)
+      await this.saveToCart();
+    // this.router.navigate([this.router.url + '/cart']);
+  }
 }
