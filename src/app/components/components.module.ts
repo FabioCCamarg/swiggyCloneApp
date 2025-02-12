@@ -19,6 +19,7 @@ import { EmptyScreenComponent } from './empty-screen/empty-screen.component';
     RestaurantComponent,
     LoadingRestaurantComponent,
     EmptyScreenComponent
+
   ]
 })
 export class ComponentsModule { }

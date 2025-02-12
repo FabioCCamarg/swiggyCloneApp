@@ -15,7 +15,12 @@ export class ItemsPage implements OnInit {
   cartData: any = {};
   items: any[] = [];
   veg: boolean = false;
+  isLoading: boolean;
   storeData: any = {};
+  model = {
+    icon: 'fast-food-outline',
+    title: 'No Menu available'
+  };
   restaurants = [
     {
       uid: '12wefdss',
@@ -132,10 +137,12 @@ export class ItemsPage implements OnInit {
   }
 
   async getItems() {
+    this.isLoading = true;
     this.data = {};
     this.cartData = {};
     this.storeData = {};
-    let data: any = this.restaurants.filter((x) => x.uid === this.id);
+    setTimeout(async () => {
+      let data: any = this.restaurants.filter((x) => x.uid === this.id);
     this.data = data[0];
     this.categories = this.categories.filter((x) => x.uid === this.id);
     this.items = this.allItems.filter((x) => x.uid === this.id);
@@ -156,9 +163,8 @@ export class ItemsPage implements OnInit {
       this.cartData.totalItem = this.storeData.totalItem;
       this.cartData.totalPrice = this.storeData.totalPrice;
     }
-  }
-  getCuisine(cuisine) {
-    return cuisine.join(', ');
+    this.isLoading = false;
+    }, 500);
   }
 
   vegOnly(event) {
@@ -168,7 +174,8 @@ export class ItemsPage implements OnInit {
     else this.items = this.allItems;
     console.log('items: ', this.items);
   }
-  quantityPlus(item, index) {
+
+  quantityPlus(index) {
     try {
       console.log(this.items[index]);
       if (!this.items[index].quantity || this.items[index].quantity == 0) {
@@ -182,7 +189,8 @@ export class ItemsPage implements OnInit {
       console.log(e);
     }
   }
-  quantityMinus(item, index) {
+
+  quantityMinus(index) {
     if (this.items[index].quantity !== 0) {
       this.items[index].quantity -= 1;
     } else {
