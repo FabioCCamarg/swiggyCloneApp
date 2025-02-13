@@ -1,6 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { Preferences } from '@capacitor/preferences';
+import { IonContent } from '@ionic/angular';
+import * as moment from 'moment';
 
 @Component({
   selector: 'app-cart',
@@ -9,25 +11,31 @@ import { Preferences } from '@capacitor/preferences';
   standalone: false,
 })
 export class CartPage implements OnInit {
+
+  @ViewChild(IonContent, {static: false}) content: IonContent;
   urlCheck: any;
   url: any;
   model: any ={};
   deliveryCharge = 20;
   instruction: any;
+  location: any = {};
 
   constructor(private router: Router) {}
 
   ngOnInit() {
     this.checkUrl();
-    this.getmodel();
+    this.getModel();
   }
 
   getCart() {
     return Preferences.get({key: 'cart'});
   }
 
-  async getmodel() {
+  async getModel() {
     let data: any = await this.getCart();
+    this.location = {
+      lat: 28.653831, lng: 77.188257, address: 'Kraol Bagh, NEw Delhi'
+    };
     if(data?.value) {
       this.model = await JSON.parse(data.value);
       console.log(this.model);
@@ -77,11 +85,27 @@ export class CartPage implements OnInit {
   }
 
   quantityPlus(index) {
-
+    try {
+      console.log(this.model.items[index]);
+      if(!this.model.items[index].quantity || this.model.items[index].quantity == 0) {
+        this.model.items[index].quantity = 1;
+        this.calculate();
+      } else {
+        this.model.items[index].quantity += 1; // this.items[index].quantity = this.items[index].quantity + 1
+        this.calculate();
+      }
+    } catch(e) {
+      console.log(e);
+    }
   }
 
   quantityMinus(index) {
-
+    if(this.model.items[index].quantity !== 0) {
+      this.model.items[index].quantity -= 1; // this.model.items[index].quantity = this.model.items[index].quantity - 1
+    } else {
+      this.model.items[index].quantity = 0;
+    }
+    this.calculate();
   }
 
   addAddress() {
@@ -93,6 +117,26 @@ export class CartPage implements OnInit {
   }
 
   makePayment() {
-    console.log('make payment');
+    try {
+      const data = {
+        restaurant_id: this.model.restaurant.uid,
+        res: this.model.restaurant,
+        order: JSON.stringify(this.model.items),
+        time: moment().format('lll'),
+        address: this.location,
+        total: this.model.totalPrice,
+        grandTotal: this.model.grandTotal,
+        deliveryCharge: this.deliveryCharge,
+        status: 'Created',
+        paid: 'COD'
+      };
+      console.log('data: ', data);
+    }catch(e) {
+      console.log(e);
+    }
+  }
+
+  scrollToBottom() {
+    this.content.scrollToBottom(500);
   }
 }
